@@ -1,6 +1,7 @@
 import { reactive } from 'vue';
 import { AppState, User, Post, Comment, AuthUser, Notification } from '../types';
 import { generateId } from '../utils';
+import { saveAuthUser, getAuthUserFromStorage } from './auth';
 
 // Create reactive state stores
 const users = reactive<User[]>([]);
@@ -8,15 +9,55 @@ const posts = reactive<Post[]>([]);
 const comments = reactive<Comment[]>([]);
 const appState = reactive<AppState>({
   currentPage: 'home',
-  currentUser: null,
+  currentUser: getAuthUserFromStorage(),
   selectedPost: null,
   selectedProfile: null,
   notifications: []
 });
 
-// Initialize store with sample data
+const USERS_KEY = 'users';
+const POSTS_KEY = 'posts';
+const COMMENTS_KEY = 'comments';
+
+function saveData() {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+  localStorage.setItem(COMMENTS_KEY, JSON.stringify(comments));
+}
+
+function loadData() {
+  const usersStr = localStorage.getItem(USERS_KEY);
+  const postsStr = localStorage.getItem(POSTS_KEY);
+  const commentsStr = localStorage.getItem(COMMENTS_KEY);
+  if (usersStr) {
+    const arr = JSON.parse(usersStr);
+    arr.forEach(u => {
+      if (u.createdAt) u.createdAt = new Date(u.createdAt);
+    });
+    users.splice(0, users.length, ...arr);
+  }
+  if (postsStr) {
+    const arr = JSON.parse(postsStr);
+    arr.forEach(p => {
+      if (p.createdAt) p.createdAt = new Date(p.createdAt);
+      if (p.updatedAt) p.updatedAt = new Date(p.updatedAt);
+    });
+    posts.splice(0, posts.length, ...arr);
+  }
+  if (commentsStr) {
+    const arr = JSON.parse(commentsStr);
+    arr.forEach(c => {
+      if (c.createdAt) c.createdAt = new Date(c.createdAt);
+      if (c.updatedAt) c.updatedAt = new Date(c.updatedAt);
+    });
+    comments.splice(0, comments.length, ...arr);
+  }
+}
+
+// Gọi loadData khi khởi động
+loadData();
+
 export function initializeStore() {
-  // Create sample users
   const user1: User = {
     id: generateId(),
     displayName: 'John Doe',
@@ -37,41 +78,9 @@ export function initializeStore() {
 
   users.push(user1, user2);
 
-  // Create sample posts
-  posts.push({
-    id: generateId(),
-    title: 'The Future of AI Technology',
-    content: 'Artificial Intelligence is transforming how we live and work. From smart assistants to autonomous vehicles, AI is becoming an integral part of our daily lives. What are your thoughts on the future of AI?',
-    authorId: user1.id,
-    imageUrl: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=600',
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
-  });
-
-  posts.push({
-    id: generateId(),
-    title: 'My Travel Experiences',
-    content: 'Just got back from an amazing trip to Japan! The culture, food, and landscapes were breathtaking. I highly recommend visiting Kyoto during cherry blossom season. #Travel #Japan',
-    authorId: user2.id,
-    imageUrl: 'https://images.pexels.com/photos/1440476/pexels-photo-1440476.jpeg?auto=compress&cs=tinysrgb&w=600',
-    createdAt: new Date()
-  });
-
-  // Create sample comments
-  comments.push({
-    id: generateId(),
-    content: 'Great insights on AI! I think ethical considerations will be crucial as this technology advances.',
-    postId: posts[0].id,
-    authorId: user2.id,
-    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000)
-  });
-
-  comments.push({
-    id: generateId(),
-    content: 'Wow, Japan looks amazing! Did you visit Tokyo as well?',
-    postId: posts[1].id,
-    authorId: user1.id,
-    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000)
-  });
+  // Xoá các bài post mẫu, không thêm post mẫu nào ở đây nữa
+  // posts.push(...)
+  // comments.push(...)
 }
 
 // User functions
@@ -79,8 +88,17 @@ export function getUsers() {
   return users;
 }
 
-export function getUserById(id: string): User | undefined {
-  return users.find(user => user.id === id);
+export function getUserById(id: string): User {
+  const user = users.find(user => user.id === id);
+  if (user) return user;
+  return {
+    id: 'unknown',
+    displayName: 'Người dùng ẩn danh',
+    email: 'unknown@example.com',
+    password: '',
+    avatarUrl: 'https://ui-avatars.com/api/?name=Unknown&background=random',
+    createdAt: new Date()
+  };
 }
 
 export function getAuthUser(id: string): AuthUser | null {
@@ -110,7 +128,10 @@ export function registerUser(displayName: string, email: string, password: strin
   // Set current user (auto login after registration)
   const { password: _, ...authUser } = newUser;
   appState.currentUser = authUser as AuthUser;
+  saveAuthUser(authUser as AuthUser);
   appState.currentPage = 'home';
+  
+  saveData();
   
   return { success: true, user: authUser };
 }
@@ -124,14 +145,20 @@ export function loginUser(email: string, password: string) {
   
   const { password: _, ...authUser } = user;
   appState.currentUser = authUser as AuthUser;
+  saveAuthUser(authUser as AuthUser);
   appState.currentPage = 'home';
+  
+  saveData();
   
   return { success: true, user: authUser };
 }
 
 export function logoutUser() {
   appState.currentUser = null;
+  saveAuthUser(null);
   appState.currentPage = 'home';
+  
+  saveData();
 }
 
 export function updateUserProfile(userId: string, displayName: string, avatarUrl: string) {
@@ -149,12 +176,16 @@ export function updateUserProfile(userId: string, displayName: string, avatarUrl
   
   // Update current user if it's the same user
   if (appState.currentUser && appState.currentUser.id === userId) {
-    appState.currentUser = {
+    const updatedUser = {
       ...appState.currentUser,
       displayName,
       avatarUrl
     };
+    appState.currentUser = updatedUser;
+    saveAuthUser(updatedUser);
   }
+  
+  saveData();
   
   return { success: true, user: appState.currentUser };
 }
@@ -172,13 +203,25 @@ export function updateUserPassword(userId: string, currentPassword: string, newP
   
   users[userIndex].password = newPassword;
   
+  saveData();
+  
   return { success: true, message: 'Password updated successfully' };
 }
 
 // Post functions
+function getValidAuthor(authorId: string): AuthUser {
+  const user = getAuthUser(authorId);
+  if (user) return user;
+  return {
+    id: 'unknown',
+    displayName: 'Người dùng ẩn danh',
+    avatarUrl: 'https://ui-avatars.com/api/?name=Unknown&background=random'
+  };
+}
+
 export function getPosts() {
   return posts.map(post => {
-    const author = getAuthUser(post.authorId);
+    const author = getValidAuthor(post.authorId);
     const commentCount = comments.filter(c => c.postId === post.id).length;
     return { ...post, author, commentCount };
   }).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -188,7 +231,7 @@ export function getPostsByUser(userId: string) {
   return posts
     .filter(post => post.authorId === userId)
     .map(post => {
-      const author = getAuthUser(post.authorId);
+      const author = getValidAuthor(post.authorId);
       const commentCount = comments.filter(c => c.postId === post.id).length;
       return { ...post, author, commentCount };
     })
@@ -199,7 +242,7 @@ export function getPostById(id: string) {
   const post = posts.find(post => post.id === id);
   if (!post) return null;
   
-  const author = getAuthUser(post.authorId);
+  const author = getValidAuthor(post.authorId);
   const commentCount = comments.filter(c => c.postId === post.id).length;
   return { ...post, author, commentCount };
 }
@@ -220,7 +263,11 @@ export function createPost(title: string, content: string, imageUrl: string | un
   
   posts.push(newPost);
   
-  return { success: true, post: newPost };
+  // Trả về post kèm author đúng kiểu cho PostCard
+  const author = getValidAuthor(authorId);
+  const commentCount = comments.filter(c => c.postId === newPost.id).length;
+  saveData();
+  return { success: true, post: { ...newPost, author, commentCount } };
 }
 
 export function updatePost(postId: string, title: string, content: string, imageUrl?: string) {
@@ -241,6 +288,8 @@ export function updatePost(postId: string, title: string, content: string, image
     imageUrl,
     updatedAt: new Date()
   };
+  
+  saveData();
   
   return { success: true, post: posts[postIndex] };
 }
@@ -267,6 +316,8 @@ export function deletePost(postId: string) {
   
   // Delete the post
   posts.splice(postIndex, 1);
+  
+  saveData();
   
   return { success: true };
 }
@@ -297,6 +348,8 @@ export function addComment(postId: string, content: string, authorId: string) {
   
   comments.push(newComment);
   
+  saveData();
+  
   return { success: true, comment: newComment };
 }
 
@@ -317,6 +370,8 @@ export function updateComment(commentId: string, content: string) {
     updatedAt: new Date()
   };
   
+  saveData();
+  
   return { success: true, comment: comments[commentIndex] };
 }
 
@@ -332,6 +387,8 @@ export function deleteComment(commentId: string) {
   }
   
   comments.splice(commentIndex, 1);
+  
+  saveData();
   
   return { success: true };
 }
@@ -370,6 +427,8 @@ export function addNotification(message: string, type: Notification['type'] = 'i
     setTimeout(() => removeNotification(notification.id), 5000);
   }
   
+  saveData();
+  
   return notification;
 }
 
@@ -378,4 +437,30 @@ export function removeNotification(id: string) {
   if (index !== -1) {
     appState.notifications.splice(index, 1);
   }
+  
+  saveData();
+}
+
+export function likePost(postId: string, userId: string) {
+  const post = posts.find(p => p.id === postId);
+  if (!post) return { success: false, message: 'Post not found' };
+  if (!post.likes) post.likes = [];
+  if (!post.likes.includes(userId)) {
+    post.likes.push(userId);
+    saveData();
+    return { success: true };
+  }
+  return { success: false, message: 'Already liked' };
+}
+
+export function unlikePost(postId: string, userId: string) {
+  const post = posts.find(p => p.id === postId);
+  if (!post || !post.likes) return { success: false, message: 'Post not found' };
+  const idx = post.likes.indexOf(userId);
+  if (idx !== -1) {
+    post.likes.splice(idx, 1);
+    saveData();
+    return { success: true };
+  }
+  return { success: false, message: 'Not liked yet' };
 }

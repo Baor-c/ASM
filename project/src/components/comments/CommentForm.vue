@@ -12,12 +12,12 @@ const appState = getAppState();
 
 function handleSubmit() {
   if (!appState.currentUser) {
-    addNotification('You must be logged in to comment', 'warning');
+    addNotification('Bạn phải đăng nhập để bình luận', 'warning');
     return;
   }
   
   if (commentContent.value.trim() === '') {
-    addNotification('Comment cannot be empty', 'warning');
+    addNotification('Bình luận không được để trống', 'warning');
     return;
   }
   
@@ -31,9 +31,9 @@ function handleSubmit() {
   
   if (result.success) {
     commentContent.value = '';
-    addNotification('Comment added successfully', 'success');
+    addNotification('Đã thêm bình luận thành công', 'success');
   } else {
-    addNotification(result.message || 'Failed to add comment', 'danger');
+    addNotification(result.message || 'Không thể thêm bình luận', 'danger');
   }
   
   isSubmitting.value = false;
@@ -42,11 +42,11 @@ function handleSubmit() {
 
 <template>
   <div class="comment-form mb-4">
-    <h5 class="mb-3">Leave a comment</h5>
+    <h5 class="mb-3">Để lại bình luận</h5>
     
     <div v-if="!appState.currentUser" class="alert alert-warning">
       <i class="bi bi-info-circle me-2"></i>
-      Please <a href="#" class="alert-link" @click.prevent="navigateTo('login')">login</a> to comment.
+      Vui lòng <a href="#" class="alert-link" @click.prevent="navigateTo('login')">đăng nhập</a> để bình luận.
     </div>
     
     <form v-else @submit.prevent="handleSubmit">
@@ -61,7 +61,7 @@ function handleSubmit() {
             v-model="commentContent"
             class="form-control"
             rows="2"
-            placeholder="Write a comment..."
+            placeholder="Viết bình luận..."
             :disabled="isSubmitting"
           ></textarea>
         </div>
@@ -74,8 +74,8 @@ function handleSubmit() {
           :disabled="isSubmitting || !commentContent.trim()"
         >
           <i class="bi bi-send me-1"></i>
-          <span v-if="isSubmitting">Posting...</span>
-          <span v-else>Post Comment</span>
+          <span v-if="isSubmitting">Đang đăng...</span>
+          <span v-else>Đăng bình luận</span>
         </button>
       </div>
     </form>

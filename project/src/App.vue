@@ -46,14 +46,14 @@ const currentComponent = computed(() => {
     <Navbar />
     
     <!-- Main content area -->
-    <main class="container py-4 flex-grow-1">
+    <main class="container-md flex-grow-1 mw ">
       <component :is="currentComponent" />
     </main>
     
     <!-- Footer -->
-    <footer class="py-3 mt-auto bg-white border-top">
-      <div class="container text-center text-muted">
-        <p class="mb-0">&copy; {{ new Date().getFullYear() }} VueX Blog. All rights reserved.</p>
+    <footer class="py-3 mt-auto bg-white border-top shadow">
+      <div class="container-sm text-center text-muted">
+        <p class="mb-0">&copy; {{ new Date().getFullYear() }} Ngô Gia Bảo</p>
       </div>
     </footer>
     
@@ -71,5 +71,8 @@ const currentComponent = computed(() => {
 <style scoped>
 .app-container {
   background-color: var(--x-light);
+}
+.mw{
+max-width: 800px;
 }
 </style>

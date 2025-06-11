@@ -39,7 +39,7 @@ const isOwnProfile = computed(() => {
         <img 
           :src="profile.avatarUrl" 
           :alt="profile.displayName" 
-          class="avatar-lg border border-4 border-white position-absolute"
+          class="avatar-lg border border-4 border-white position-absolute rounded-circle"
           style="top: -40px; left: 20px;"
         >
         
@@ -50,7 +50,7 @@ const isOwnProfile = computed(() => {
             class="btn btn-outline-primary"
             @click="navigateTo('edit-profile')"
           >
-            <i class="bi bi-pencil me-1"></i> Edit Profile
+            <i class="bi bi-pencil me-1"></i> Chỉnh sửa hồ sơ
           </button>
         </div>
         
@@ -58,14 +58,14 @@ const isOwnProfile = computed(() => {
         <h3 class="mb-1">{{ profile.displayName }}</h3>
         <p class="text-secondary mb-2">{{ profile.email }}</p>
         <p class="mb-2">
-          <i class="bi bi-calendar3 me-1"></i> Joined {{ formatDate(profile.createdAt) }}
+          <i class="bi bi-calendar3 me-1"></i> Tham gia {{ formatDate(profile.createdAt) }}
         </p>
       </div>
     </div>
     
     <!-- User Posts -->
     <div class="bg-white rounded p-4 mb-4 x-card">
-      <h4 class="mb-3">Posts</h4>
+      <h4 class="mb-3">Bài viết</h4>
       
       <div v-if="posts.length > 0">
         <PostCard 
@@ -78,13 +78,13 @@ const isOwnProfile = computed(() => {
       <!-- No Posts Message -->
       <div v-else class="text-center py-4 text-secondary">
         <i class="bi bi-journal-text fs-2 mb-2"></i>
-        <p class="mb-1">No posts yet.</p>
+        <p class="mb-1">Chưa có bài viết nào.</p>
         <button 
           v-if="isOwnProfile"
           class="btn btn-primary mt-2" 
           @click="navigateTo('create-post')"
         >
-          <i class="bi bi-pencil-square me-1"></i> Create Post
+          <i class="bi bi-pencil-square me-1"></i> Tạo bài viết
         </button>
       </div>
     </div>

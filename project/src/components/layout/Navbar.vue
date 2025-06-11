@@ -18,7 +18,7 @@ function handleLogout() {
 </script>
 
 <template>
-  <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-white border-bottom">
+  <nav class="navbar navbar-expand-lg sticky-top navbar-light bg-white border-bottom shadow ">
     <div class="container">
       <!-- Logo/Brand -->
       <a class="navbar-brand d-flex align-items-center" href="#" @click.prevent="navigateTo('home')">
@@ -26,7 +26,6 @@ function handleLogout() {
         <span class="fw-bold">VueX Blog</span>
       </a>
 
-      <!-- Hamburger menu for mobile -->
       <button 
         class="navbar-toggler" 
         type="button" 
@@ -38,17 +37,11 @@ function handleLogout() {
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <!-- Navbar content -->
       <div class="collapse navbar-collapse" :class="{ 'show': !isNavCollapsed }" id="navbarContent">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
             <a class="nav-link" href="#" @click.prevent="navigateTo('home')">
               <i class="bi bi-house-door"></i> Home
-            </a>
-          </li>
-          <li class="nav-item" v-if="isLoggedIn">
-            <a class="nav-link" href="#" @click.prevent="navigateTo('create-post')">
-              <i class="bi bi-pencil-square"></i> New Post
             </a>
           </li>
           <li class="nav-item" v-if="isLoggedIn">
@@ -58,13 +51,12 @@ function handleLogout() {
           </li>
         </ul>
 
-        <!-- Authentication links -->
         <div class="d-flex">
           <template v-if="isLoggedIn">
             <div class="d-flex align-items-center me-3">
               <img 
                 :src="appState.currentUser?.avatarUrl" 
-                class="avatar-sm me-2" 
+                class="avatar-sm me-2 rounded-circle" 
                 :alt="appState.currentUser?.displayName"
               >
               <span class="d-none d-sm-inline">{{ appState.currentUser?.displayName }}</span>

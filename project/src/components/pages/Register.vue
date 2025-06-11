@@ -17,7 +17,6 @@ const errors = ref({
   email: '',
   password: '',
   confirmPassword: '',
-  avatarUrl: '',
   form: ''
 });
 
@@ -29,7 +28,6 @@ function validateForm(): boolean {
     email: '',
     password: '',
     confirmPassword: '',
-    avatarUrl: '',
     form: ''
   };
 
@@ -37,42 +35,38 @@ function validateForm(): boolean {
 
   // Display name validation
   if (!form.value.displayName) {
-    errors.value.displayName = 'Display name is required';
+    errors.value.displayName = 'Tên hiển thị là bắt buộc';
     isValid = false;
   } else if (form.value.displayName.length < 3) {
-    errors.value.displayName = 'Display name must be at least 3 characters';
+    errors.value.displayName = 'Tên hiển thị phải có ít nhất 3 ký tự';
     isValid = false;
   }
 
   // Email validation
   if (!form.value.email) {
-    errors.value.email = 'Email is required';
+    errors.value.email = 'Email là bắt buộc';
     isValid = false;
   } else if (!isValidEmail(form.value.email)) {
-    errors.value.email = 'Please enter a valid email address';
+    errors.value.email = 'Vui lòng nhập địa chỉ email hợp lệ';
     isValid = false;
   }
 
   if (!form.value.password) {
-    errors.value.password = 'Password is required';
+    errors.value.password = 'Mật khẩu là bắt buộc';
     isValid = false;
   } else if (!isValidPassword(form.value.password)) {
-    errors.value.password = 'Password must be at least 8 characters with letters and numbers';
+    errors.value.password = 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số';
     isValid = false;
   }
 
   if (!form.value.confirmPassword) {
-    errors.value.confirmPassword = 'Please confirm your password';
+    errors.value.confirmPassword = 'Vui lòng xác nhận mật khẩu';
     isValid = false;
   } else if (form.value.password !== form.value.confirmPassword) {
-    errors.value.confirmPassword = 'Passwords do not match';
+    errors.value.confirmPassword = 'Mật khẩu không khớp';
     isValid = false;
   }
 
-  if (avatarUrl.value && !avatarUrl.value.match(/^https?:\/\/.+/)) {
-    errors.value.avatarUrl = 'Please enter a valid URL starting with http:// or https://';
-    isValid = false;
-  }
 
   return isValid;
 }
@@ -92,10 +86,10 @@ function handleSubmit() {
   );
 
   if (result.success) {
-    addNotification(`Welcome, ${result.user.displayName}! Your account has been created.`, 'success');
+    addNotification(`Chào mừng, ${result.user?.displayName}! Tài khoản của bạn đã được tạo.`, 'success');
     navigateTo('home');
   } else {
-    errors.value.form = result.message || 'Registration failed';
+    errors.value.form = result.message || 'Đăng ký thất bại';
     addNotification(errors.value.form, 'danger');
   }
 
@@ -105,12 +99,12 @@ function handleSubmit() {
 
 <template>
   <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
+    <div class="col-md-12 col-lg-8 mt-3">
       <div class="x-card bg-white p-4">
         <div class="text-center mb-4">
           <i class="bi bi-twitter text-primary fs-1"></i>
-          <h2 class="mt-2">Create an Account</h2>
-          <p class="text-secondary">Join the VueX Blog community</p>
+          <h2 class="mt-2">Tạo tài khoản</h2>
+          <p class="text-secondary">Tham gia cộng đồng VueX Blog</p>
         </div>
 
         <form @submit.prevent="handleSubmit">
@@ -121,7 +115,7 @@ function handleSubmit() {
 
           <!-- Display Name input -->
           <div class="mb-3">
-            <label for="displayName" class="form-label">Display Name</label>
+            <label for="displayName" class="form-label">Tên hiển thị</label>
             <div class="input-group">
               <span class="input-group-text"><i class="bi bi-person"></i></span>
               <input
@@ -130,7 +124,7 @@ function handleSubmit() {
                 v-model="form.displayName"
                 class="form-control"
                 :class="{ 'is-invalid': errors.displayName }"
-                placeholder="How you want to be known"
+                placeholder="Tên bạn muốn hiển thị"
                 autocomplete="name"
               >
             </div>
@@ -157,7 +151,7 @@ function handleSubmit() {
 
           <!-- Password input -->
           <div class="mb-3">
-            <label for="registerPassword" class="form-label">Password</label>
+            <label for="registerPassword" class="form-label">Mật khẩu</label>
             <div class="input-group">
               <span class="input-group-text"><i class="bi bi-lock"></i></span>
               <input
@@ -166,17 +160,17 @@ function handleSubmit() {
                 v-model="form.password"
                 class="form-control"
                 :class="{ 'is-invalid': errors.password }"
-                placeholder="Create a strong password"
+                placeholder="Tạo mật khẩu mạnh"
                 autocomplete="new-password"
               >
             </div>
             <div class="invalid-feedback" v-if="errors.password">{{ errors.password }}</div>
-            <div class="form-text">Password must be at least 8 characters with letters and numbers.</div>
+            <div class="form-text">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số.</div>
           </div>
 
           <!-- Confirm Password input -->
           <div class="mb-3">
-            <label for="confirmPassword" class="form-label">Confirm Password</label>
+            <label for="confirmPassword" class="form-label">Xác nhận mật khẩu</label>
             <div class="input-group">
               <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
               <input
@@ -185,30 +179,14 @@ function handleSubmit() {
                 v-model="form.confirmPassword"
                 class="form-control"
                 :class="{ 'is-invalid': errors.confirmPassword }"
-                placeholder="Confirm your password"
+                placeholder="Xác nhận mật khẩu"
                 autocomplete="new-password"
               >
             </div>
             <div class="invalid-feedback" v-if="errors.confirmPassword">{{ errors.confirmPassword }}</div>
           </div>
 
-          <!-- Avatar URL input (optional) -->
-          <div class="mb-4">
-            <label for="avatarUrl" class="form-label">Avatar URL (optional)</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-image"></i></span>
-              <input
-                type="text"
-                id="avatarUrl"
-                v-model="avatarUrl"
-                class="form-control"
-                :class="{ 'is-invalid': errors.avatarUrl }"
-                placeholder="https://example.com/your-avatar.jpg"
-              >
-            </div>
-            <div class="invalid-feedback" v-if="errors.avatarUrl">{{ errors.avatarUrl }}</div>
-            <div class="form-text">If left blank, a default avatar will be generated.</div>
-          </div>
+    
 
           <!-- Submit button -->
           <button
@@ -218,18 +196,18 @@ function handleSubmit() {
           >
             <span v-if="isSubmitting">
               <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-              Creating Account...
+              Đang tạo tài khoản...
             </span>
             <span v-else>
-              <i class="bi bi-person-plus me-1"></i> Register
+              <i class="bi bi-person-plus me-1"></i> Đăng ký
             </span>
           </button>
         </form>
 
         <div class="text-center mt-3">
           <p class="mb-0">
-            Already have an account?
-            <a href="#" class="x-link" @click.prevent="navigateTo('login')">Login</a>
+            Đã có tài khoản?
+            <a href="#" class="x-link" @click.prevent="navigateTo('login')">Đăng nhập</a>
           </p>
         </div>
       </div>

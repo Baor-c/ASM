@@ -12,9 +12,9 @@ export function formatDate(date: Date): string {
   if (diffInHours < 24) {
     if (diffInHours < 1) {
       const minutes = Math.round(diffInHours * 60);
-      return `${minutes}m ago`;
+      return `${minutes} phút trước`;
     } else {
-      return `${Math.round(diffInHours)}h ago`;
+      return `${Math.round(diffInHours)} giờ trước`;
     }
   }
   

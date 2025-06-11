@@ -55,7 +55,7 @@ function handleSubmit() {
   const result = loginUser(form.value.email, form.value.password);
 
   if (result.success) {
-    addNotification(`Welcome back, ${result.user.displayName}!`, 'success');
+    addNotification(`Welcome back, ${result.user?.displayName}!`, 'success');
     navigateTo('home');
   } else {
     errors.value.form = result.message || 'Invalid login credentials';
@@ -68,12 +68,11 @@ function handleSubmit() {
 
 <template>
   <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
+    <div class="col-md-6 col-lg-8 mt-3">
       <div class="x-card bg-white p-4">
         <div class="text-center mb-4">
           <i class="bi bi-twitter text-primary fs-1"></i>
-          <h2 class="mt-2">Login to VueX Blog</h2>
-          <p class="text-secondary">Enter your credentials to access your account</p>
+          <h2 class="mt-2">Đăng nhập Blog</h2>
         </div>
 
         <form @submit.prevent="handleSubmit">
@@ -136,8 +135,8 @@ function handleSubmit() {
 
         <div class="text-center mt-3">
           <p class="mb-0">
-            Don't have an account? 
-            <a href="#" class="x-link" @click.prevent="navigateTo('register')">Register now</a>
+            Không có tài khoản?
+            <a href="#" class="x-link" @click.prevent="navigateTo('register')">Đăng ký ngay?</a>
           </p>
         </div>
       </div>

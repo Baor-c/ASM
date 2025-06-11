@@ -18,7 +18,7 @@ function handleEditComment() {
 
 function handleSaveComment() {
   if (editedContent.value.trim() === '') {
-    addNotification('Comment cannot be empty', 'warning');
+    addNotification('Bình luận không được để trống', 'warning');
     return;
   }
   
@@ -26,9 +26,9 @@ function handleSaveComment() {
   
   if (result.success) {
     isEditing.value = false;
-    addNotification('Comment updated successfully', 'success');
+    addNotification('Cập nhật bình luận thành công', 'success');
   } else {
-    addNotification(result.message || 'Failed to update comment', 'danger');
+    addNotification(result.message || 'Không thể cập nhật bình luận', 'danger');
   }
 }
 
@@ -38,13 +38,13 @@ function handleCancelEdit() {
 }
 
 function handleDeleteComment() {
-  if (confirm('Are you sure you want to delete this comment?')) {
+  if (confirm('Bạn có chắc chắn muốn xóa bình luận này?')) {
     const result = deleteComment(props.comment.id);
     
     if (result.success) {
-      addNotification('Comment deleted successfully', 'success');
+      addNotification('Xóa bình luận thành công', 'success');
     } else {
-      addNotification(result.message || 'Failed to delete comment', 'danger');
+      addNotification(result.message || 'Không thể xóa bình luận', 'danger');
     }
   }
 }
@@ -70,12 +70,12 @@ function handleDeleteComment() {
             <ul class="dropdown-menu dropdown-menu-end">
               <li>
                 <a class="dropdown-item" href="#" @click.prevent="handleEditComment">
-                  <i class="bi bi-pencil me-2"></i> Edit
+                  <i class="bi bi-pencil me-2"></i> Chỉnh sửa
                 </a>
               </li>
               <li>
                 <a class="dropdown-item text-danger" href="#" @click.prevent="handleDeleteComment">
-                  <i class="bi bi-trash me-2"></i> Delete
+                  <i class="bi bi-trash me-2"></i> Xóa
                 </a>
               </li>
             </ul>
@@ -91,11 +91,11 @@ function handleDeleteComment() {
             v-model="editedContent" 
             class="form-control mb-2" 
             rows="2" 
-            placeholder="Edit your comment..."
+            placeholder="Chỉnh sửa bình luận của bạn..."
           ></textarea>
           <div class="d-flex">
-            <button class="btn btn-sm btn-primary me-2" @click="handleSaveComment">Save</button>
-            <button class="btn btn-sm btn-outline-secondary" @click="handleCancelEdit">Cancel</button>
+            <button class="btn btn-sm btn-primary me-2" @click="handleSaveComment">Lưu</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="handleCancelEdit">Hủy</button>
           </div>
         </div>
       </div>

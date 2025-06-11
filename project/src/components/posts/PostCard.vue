@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { defineProps } from 'vue';
-import { navigateTo, deletePost, addNotification, getAppState } from '../../store';
+import { defineProps, computed } from 'vue';
+import { navigateTo, deletePost, addNotification, getAppState, likePost, unlikePost } from '../../store';
 import { formatDate, truncateText } from '../../utils';
 
 const props = defineProps<{
@@ -16,11 +16,27 @@ const props = defineProps<{
       avatarUrl: string;
     };
     commentCount: number;
+    likes?: string[];
   },
   detailed?: boolean
 }>();
 
 const appState = getAppState();
+
+const likeCount = computed(() => props.post.likes ? props.post.likes.length : 0);
+const isLiked = computed(() => appState.currentUser && props.post.likes && props.post.likes.includes(appState.currentUser.id));
+
+function handleLike() {
+  if (!appState.currentUser) {
+    addNotification('Bạn cần đăng nhập để thả tim', 'warning');
+    return;
+  }
+  if (isLiked.value) {
+    unlikePost(props.post.id, appState.currentUser.id);
+  } else {
+    likePost(props.post.id, appState.currentUser.id);
+  }
+}
 
 function handleDeletePost() {
   if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
@@ -39,7 +55,7 @@ function handleDeletePost() {
 </script>
 
 <template>
-  <div class="x-card bg-white mb-3 overflow-hidden">
+  <div class="x-card bg-white mb-3 overflow-hidden post-card">
     <!-- Post Header with Author Info -->
     <div class="d-flex p-3">
       <img :src="post.author.avatarUrl" :alt="post.author.displayName" class="avatar me-3">
@@ -77,7 +93,6 @@ function handleDeletePost() {
       <p v-if="detailed">{{ post.content }}</p>
       <p v-else>{{ truncateText(post.content, 150) }}</p>
       
-      <!-- Read more link if not in detailed view -->
       <a 
         v-if="!detailed && post.content.length > 150" 
         href="#" 
@@ -102,25 +117,39 @@ function handleDeletePost() {
         <i class="bi bi-chat me-1"></i>
         <span>{{ post.commentCount }} bình luận</span>
       </button>
+      <button
+        class="btn flex-fill d-flex align-items-center justify-content-center"
+        :class="{ liked: isLiked }"
+        @click="handleLike"
+      >
+        <i :class="['bi', isLiked ? 'bi-heart-fill text-danger' : 'bi-heart']"></i>
+        <span class="ms-1">{{ likeCount }} lượt thích</span>
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
+.post-card {
+  max-width: 800px;
+  margin: 0 auto;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+}
+
 .post-image-container {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+  max-width: 600px;
+  margin: 0 auto;
+  padding-top: 0;
   overflow: hidden;
 }
 
 .post-image {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   border-radius: 8px;
 }
 
@@ -130,6 +159,11 @@ function handleDeletePost() {
   background: transparent;
   border: none;
   transition: all 0.2s;
+}
+
+.post-actions button.liked,
+.post-actions button.liked:hover {
+  color: #e0245e;
 }
 
 .post-actions button:hover {

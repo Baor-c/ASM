@@ -5,7 +5,6 @@ import { isValidPassword } from '../../utils';
 
 const appState = getAppState();
 
-// Redirect if not logged in
 if (!appState.currentUser) {
   navigateTo('login');
 }
@@ -39,15 +38,15 @@ function validateProfileForm(): boolean {
   let isValid = true;
   
   if (!profileForm.value.displayName.trim()) {
-    errors.value.displayName = 'Display name is required';
+    errors.value.displayName = 'Tên hiển thị là bắt buộc';
     isValid = false;
   } else if (profileForm.value.displayName.length < 3) {
-    errors.value.displayName = 'Display name must be at least 3 characters';
+    errors.value.displayName = 'Tên hiển thị phải có ít nhất 3 ký tự';
     isValid = false;
   }
   
   if (profileForm.value.avatarUrl && !profileForm.value.avatarUrl.match(/^https?:\/\/.+/)) {
-    errors.value.avatarUrl = 'Please enter a valid URL starting with http:// or https://';
+    errors.value.avatarUrl = 'Vui lòng nhập URL hợp lệ bắt đầu bằng http:// hoặc https://';
     isValid = false;
   }
   
@@ -62,23 +61,23 @@ function validatePasswordForm(): boolean {
   let isValid = true;
   
   if (!passwordForm.value.currentPassword) {
-    errors.value.currentPassword = 'Current password is required';
+    errors.value.currentPassword = 'Mật khẩu hiện tại là bắt buộc';
     isValid = false;
   }
   
   if (!passwordForm.value.newPassword) {
-    errors.value.newPassword = 'New password is required';
+    errors.value.newPassword = 'Mật khẩu mới là bắt buộc';
     isValid = false;
   } else if (!isValidPassword(passwordForm.value.newPassword)) {
-    errors.value.newPassword = 'Password must be at least 8 characters with letters and numbers';
+    errors.value.newPassword = 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số';
     isValid = false;
   }
   
   if (!passwordForm.value.confirmPassword) {
-    errors.value.confirmPassword = 'Please confirm your password';
+    errors.value.confirmPassword = 'Vui lòng xác nhận mật khẩu';
     isValid = false;
   } else if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    errors.value.confirmPassword = 'Passwords do not match';
+    errors.value.confirmPassword = 'Mật khẩu không khớp';
     isValid = false;
   }
   
@@ -99,9 +98,9 @@ function handleUpdateProfile() {
   );
   
   if (result.success) {
-    addNotification('Profile updated successfully', 'success');
+    addNotification('Cập nhật hồ sơ thành công', 'success');
   } else {
-    addNotification(result.message || 'Failed to update profile', 'danger');
+    addNotification(result.message || 'Không thể cập nhật hồ sơ', 'danger');
   }
   
   isUpdatingProfile.value = false;
@@ -121,7 +120,7 @@ function handleUpdatePassword() {
   );
   
   if (result.success) {
-    addNotification('Password updated successfully', 'success');
+    addNotification('Cập nhật mật khẩu thành công', 'success');
     // Clear password fields
     passwordForm.value = {
       currentPassword: '',
@@ -129,7 +128,7 @@ function handleUpdatePassword() {
       confirmPassword: ''
     };
   } else {
-    addNotification(result.message || 'Failed to update password', 'danger');
+    addNotification(result.message || 'Không thể cập nhật mật khẩu', 'danger');
   }
   
   isUpdatingPassword.value = false;
@@ -139,14 +138,14 @@ function handleUpdatePassword() {
 <template>
   <div v-if="appState.currentUser" class="edit-profile-page">
     <div class="bg-white rounded p-4 mb-4 x-card">
-      <h2 class="mb-4">Edit Profile</h2>
+      <h2 class="mb-4">Chỉnh sửa hồ sơ</h2>
       
       <!-- Profile Form -->
       <form @submit.prevent="handleUpdateProfile">
-        <h4 class="mb-3">Profile Information</h4>
+        <h4 class="mb-3">Thông tin hồ sơ</h4>
         
         <div class="mb-3">
-          <label for="displayName" class="form-label">Display Name</label>
+          <label for="displayName" class="form-label">Tên hiển thị</label>
           <input
             type="text"
             id="displayName"
@@ -166,11 +165,11 @@ function handleUpdatePassword() {
             class="form-control"
             disabled
           >
-          <div class="form-text">Email cannot be changed</div>
+          <div class="form-text">Không thể thay đổi email</div>
         </div>
         
         <div class="mb-3">
-          <label for="avatarUrl" class="form-label">Avatar URL</label>
+          <label for="avatarUrl" class="form-label">URL ảnh đại diện</label>
           <input
             type="text"
             id="avatarUrl"
@@ -184,7 +183,7 @@ function handleUpdatePassword() {
         
         <div class="mb-4">
           <div class="d-flex align-items-center">
-            <span class="me-3">Preview:</span>
+            <span class="me-3">Xem trước:</span>
             <img
               :src="profileForm.avatarUrl || appState.currentUser.avatarUrl"
               alt="Avatar Preview"
@@ -199,7 +198,7 @@ function handleUpdatePassword() {
             class="btn btn-outline-secondary"
             @click="navigateTo('profile', { userId: appState.currentUser.id })"
           >
-            Cancel
+            Hủy
           </button>
           <button
             type="submit"
@@ -208,10 +207,10 @@ function handleUpdatePassword() {
           >
             <span v-if="isUpdatingProfile">
               <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-              Updating...
+              Đang cập nhật...
             </span>
             <span v-else>
-              <i class="bi bi-check-circle me-1"></i> Save Changes
+              <i class="bi bi-check-circle me-1"></i> Lưu thay đổi
             </span>
           </button>
         </div>
@@ -221,44 +220,44 @@ function handleUpdatePassword() {
     <!-- Password Change Form -->
     <div class="bg-white rounded p-4 mb-4 x-card">
       <form @submit.prevent="handleUpdatePassword">
-        <h4 class="mb-3">Change Password</h4>
+        <h4 class="mb-3">Đổi mật khẩu</h4>
         
         <div class="mb-3">
-          <label for="currentPassword" class="form-label">Current Password</label>
+          <label for="currentPassword" class="form-label">Mật khẩu hiện tại</label>
           <input
             type="password"
             id="currentPassword"
             v-model="passwordForm.currentPassword"
             class="form-control"
             :class="{ 'is-invalid': errors.currentPassword }"
-            placeholder="Enter your current password"
+            placeholder="Nhập mật khẩu hiện tại"
           >
           <div class="invalid-feedback" v-if="errors.currentPassword">{{ errors.currentPassword }}</div>
         </div>
         
         <div class="mb-3">
-          <label for="newPassword" class="form-label">New Password</label>
+          <label for="newPassword" class="form-label">Mật khẩu mới</label>
           <input
             type="password"
             id="newPassword"
             v-model="passwordForm.newPassword"
             class="form-control"
             :class="{ 'is-invalid': errors.newPassword }"
-            placeholder="Create a new password"
+            placeholder="Tạo mật khẩu mới"
           >
           <div class="invalid-feedback" v-if="errors.newPassword">{{ errors.newPassword }}</div>
-          <div class="form-text">Password must be at least 8 characters with letters and numbers.</div>
+          <div class="form-text">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số.</div>
         </div>
         
         <div class="mb-4">
-          <label for="confirmPassword" class="form-label">Confirm New Password</label>
+          <label for="confirmPassword" class="form-label">Xác nhận mật khẩu mới</label>
           <input
             type="password"
             id="confirmPassword"
             v-model="passwordForm.confirmPassword"
             class="form-control"
             :class="{ 'is-invalid': errors.confirmPassword }"
-            placeholder="Confirm your new password"
+            placeholder="Xác nhận mật khẩu mới"
           >
           <div class="invalid-feedback" v-if="errors.confirmPassword">{{ errors.confirmPassword }}</div>
         </div>
@@ -271,10 +270,10 @@ function handleUpdatePassword() {
           >
             <span v-if="isUpdatingPassword">
               <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-              Updating Password...
+              Đang cập nhật mật khẩu...
             </span>
             <span v-else>
-              <i class="bi bi-lock me-1"></i> Change Password
+              <i class="bi bi-lock me-1"></i> Đổi mật khẩu
             </span>
           </button>
         </div>
