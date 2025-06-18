@@ -41,12 +41,17 @@ function handleLogout() {
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
             <a class="nav-link" href="#" @click.prevent="navigateTo('home')">
-              <i class="bi bi-house-door"></i> Home
+              <i class="bi bi-house-door"></i> Trang chủ
             </a>
           </li>
           <li class="nav-item" v-if="isLoggedIn">
             <a class="nav-link" href="#" @click.prevent="navigateTo('profile', { userId: appState.currentUser?.id })">
-              <i class="bi bi-person"></i> Profile
+              <i class="bi bi-person"></i> Hồ sơ
+            </a>
+          </li>
+          <li class="nav-item" v-if="isLoggedIn">
+            <a class="nav-link" href="#" @click.prevent="navigateTo('history')">
+              <i class="bi bi-clock-history"></i> Lịch sử
             </a>
           </li>
         </ul>
@@ -62,15 +67,15 @@ function handleLogout() {
               <span class="d-none d-sm-inline">{{ appState.currentUser?.displayName }}</span>
             </div>
             <button class="btn btn-outline-primary btn-sm" @click="handleLogout">
-              <i class="bi bi-box-arrow-right"></i> Logout
+              <i class="bi bi-box-arrow-right"></i> Đăng xuất
             </button>
           </template>
           <template v-else>
             <button class="btn btn-outline-primary me-2" @click="navigateTo('login')">
-              Login
+              Đăng nhập
             </button>
             <button class="btn btn-primary" @click="navigateTo('register')">
-              Register
+              Đăng ký
             </button>
           </template>
         </div>

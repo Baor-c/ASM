@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { AppState, User, Post, Comment, AuthUser, Notification } from '../types';
+import { AppState, User, Post, Comment, AuthUser, Notification, PostActivity, CommentActivity, LikeActivity } from '../types';
 import { generateId } from '../utils';
 import { saveAuthUser, getAuthUserFromStorage } from './auth';
 
@@ -7,6 +7,10 @@ import { saveAuthUser, getAuthUserFromStorage } from './auth';
 const users = reactive<User[]>([]);
 const posts = reactive<Post[]>([]);
 const comments = reactive<Comment[]>([]);
+const postActivities = reactive<PostActivity[]>([]);
+const commentActivities = reactive<CommentActivity[]>([]);
+const likeActivities = reactive<LikeActivity[]>([]);
+
 const appState = reactive<AppState>({
   currentPage: 'home',
   currentUser: getAuthUserFromStorage(),
@@ -18,17 +22,27 @@ const appState = reactive<AppState>({
 const USERS_KEY = 'users';
 const POSTS_KEY = 'posts';
 const COMMENTS_KEY = 'comments';
+const POST_ACTIVITIES_KEY = 'post_activities';
+const COMMENT_ACTIVITIES_KEY = 'comment_activities';
+const LIKE_ACTIVITIES_KEY = 'like_activities';
 
 function saveData() {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
   localStorage.setItem(COMMENTS_KEY, JSON.stringify(comments));
+  localStorage.setItem(POST_ACTIVITIES_KEY, JSON.stringify(postActivities));
+  localStorage.setItem(COMMENT_ACTIVITIES_KEY, JSON.stringify(commentActivities));
+  localStorage.setItem(LIKE_ACTIVITIES_KEY, JSON.stringify(likeActivities));
 }
 
 function loadData() {
   const usersStr = localStorage.getItem(USERS_KEY);
   const postsStr = localStorage.getItem(POSTS_KEY);
   const commentsStr = localStorage.getItem(COMMENTS_KEY);
+  const postActivitiesStr = localStorage.getItem(POST_ACTIVITIES_KEY);
+  const commentActivitiesStr = localStorage.getItem(COMMENT_ACTIVITIES_KEY);
+  const likeActivitiesStr = localStorage.getItem(LIKE_ACTIVITIES_KEY);
+
   if (usersStr) {
     const arr = JSON.parse(usersStr);
     arr.forEach(u => {
@@ -51,6 +65,27 @@ function loadData() {
       if (c.updatedAt) c.updatedAt = new Date(c.updatedAt);
     });
     comments.splice(0, comments.length, ...arr);
+  }
+  if (postActivitiesStr) {
+    const arr = JSON.parse(postActivitiesStr);
+    arr.forEach(a => {
+      if (a.createdAt) a.createdAt = new Date(a.createdAt);
+    });
+    postActivities.splice(0, postActivities.length, ...arr);
+  }
+  if (commentActivitiesStr) {
+    const arr = JSON.parse(commentActivitiesStr);
+    arr.forEach(a => {
+      if (a.createdAt) a.createdAt = new Date(a.createdAt);
+    });
+    commentActivities.splice(0, commentActivities.length, ...arr);
+  }
+  if (likeActivitiesStr) {
+    const arr = JSON.parse(likeActivitiesStr);
+    arr.forEach(a => {
+      if (a.createdAt) a.createdAt = new Date(a.createdAt);
+    });
+    likeActivities.splice(0, likeActivities.length, ...arr);
   }
 }
 
@@ -77,10 +112,47 @@ export function initializeStore() {
   };
 
   users.push(user1, user2);
+}
 
-  // Xoá các bài post mẫu, không thêm post mẫu nào ở đây nữa
-  // posts.push(...)
-  // comments.push(...)
+// Activity tracking functions
+function addPostActivity(userId: string, postId: string, type: 'create' | 'update' | 'delete', postTitle: string, postContent: string) {
+  const activity: PostActivity = {
+    id: generateId(),
+    userId,
+    postId,
+    type,
+    createdAt: new Date(),
+    postTitle,
+    postContent
+  };
+  postActivities.push(activity);
+}
+
+function addCommentActivity(userId: string, commentId: string, postId: string, type: 'create' | 'update' | 'delete', commentContent: string, postTitle: string) {
+  const activity: CommentActivity = {
+    id: generateId(),
+    userId,
+    commentId,
+    postId,
+    type,
+    createdAt: new Date(),
+    commentContent,
+    postTitle
+  };
+  commentActivities.push(activity);
+}
+
+function addLikeActivity(userId: string, postId: string, type: 'like' | 'unlike', postTitle: string, postAuthor: string) {
+  const activity: LikeActivity = {
+    id: generateId(),
+    userId,
+    postId,
+    type,
+    createdAt: new Date(),
+    postTitle,
+    postAuthor
+  };
+  likeActivities.push(activity);
 }
 
 // User functions
@@ -258,10 +330,14 @@ export function createPost(title: string, content: string, imageUrl: string | un
     content,
     imageUrl,
     authorId,
-    createdAt: new Date()
+    createdAt: new Date(),
+    likes: []
   };
   
   posts.push(newPost);
+  
+  // Add activity tracking
+  addPostActivity(authorId, newPost.id, 'create', title, content);
   
   // Trả về post kèm author đúng kiểu cho PostCard
   const author = getValidAuthor(authorId);
@@ -289,6 +365,9 @@ export function updatePost(postId: string, title: string, content: string, image
     updatedAt: new Date()
   };
   
+  // Add activity tracking
+  addPostActivity(appState.currentUser.id, postId, 'update', title, content);
+  
   saveData();
   
   return { success: true, post: posts[postIndex] };
@@ -304,6 +383,11 @@ export function deletePost(postId: string) {
   if (!appState.currentUser || posts[postIndex].authorId !== appState.currentUser.id) {
     return { success: false, message: 'You can only delete your own posts' };
   }
+  
+  const post = posts[postIndex];
+  
+  // Add activity tracking before deletion
+  addPostActivity(appState.currentUser.id, postId, 'delete', post.title, post.content);
   
   // Delete all comments associated with this post
   const postComments = comments.filter(comment => comment.postId === postId);
@@ -348,6 +432,11 @@ export function addComment(postId: string, content: string, authorId: string) {
   
   comments.push(newComment);
   
+  // Add activity tracking
+  const post = getPostById(postId);
+  const postTitle = post ? post.title : 'Bài viết không xác định';
+  addCommentActivity(authorId, newComment.id, postId, 'create', content, postTitle);
+  
   saveData();
   
   return { success: true, comment: newComment };
@@ -364,11 +453,18 @@ export function updateComment(commentId: string, content: string) {
     return { success: false, message: 'You can only edit your own comments' };
   }
   
+  const comment = comments[commentIndex];
+  
   comments[commentIndex] = {
     ...comments[commentIndex],
     content,
     updatedAt: new Date()
   };
+  
+  // Add activity tracking
+  const post = getPostById(comment.postId);
+  const postTitle = post ? post.title : 'Bài viết không xác định';
+  addCommentActivity(appState.currentUser.id, commentId, comment.postId, 'update', content, postTitle);
   
   saveData();
   
@@ -386,11 +482,72 @@ export function deleteComment(commentId: string) {
     return { success: false, message: 'You can only delete your own comments' };
   }
   
+  const comment = comments[commentIndex];
+  
+  // Add activity tracking before deletion
+  const post = getPostById(comment.postId);
+  const postTitle = post ? post.title : 'Bài viết không xác định';
+  addCommentActivity(appState.currentUser.id, commentId, comment.postId, 'delete', comment.content, postTitle);
+  
   comments.splice(commentIndex, 1);
   
   saveData();
   
   return { success: true };
+}
+
+// Like functions
+export function likePost(postId: string, userId: string) {
+  const post = posts.find(p => p.id === postId);
+  if (!post) return { success: false, message: 'Post not found' };
+  if (!post.likes) post.likes = [];
+  if (!post.likes.includes(userId)) {
+    post.likes.push(userId);
+    
+    // Add activity tracking
+    const author = getValidAuthor(post.authorId);
+    addLikeActivity(userId, postId, 'like', post.title, author.displayName);
+    
+    saveData();
+    return { success: true };
+  }
+  return { success: false, message: 'Already liked' };
+}
+
+export function unlikePost(postId: string, userId: string) {
+  const post = posts.find(p => p.id === postId);
+  if (!post || !post.likes) return { success: false, message: 'Post not found' };
+  const idx = post.likes.indexOf(userId);
+  if (idx !== -1) {
+    post.likes.splice(idx, 1);
+    
+    // Add activity tracking
+    const author = getValidAuthor(post.authorId);
+    addLikeActivity(userId, postId, 'unlike', post.title, author.displayName);
+    
+    saveData();
+    return { success: true };
+  }
+  return { success: false, message: 'Not liked yet' };
+}
+
+// History functions
+export function getUserPostActivities(userId: string) {
+  return postActivities
+    .filter(activity => activity.userId === userId)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+export function getUserCommentActivities(userId: string) {
+  return commentActivities
+    .filter(activity => activity.userId === userId)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+export function getUserLikeActivities(userId: string) {
+  return likeActivities
+    .filter(activity => activity.userId === userId)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 // Application state functions
@@ -439,28 +596,4 @@ export function removeNotification(id: string) {
   }
   
   saveData();
-}
-
-export function likePost(postId: string, userId: string) {
-  const post = posts.find(p => p.id === postId);
-  if (!post) return { success: false, message: 'Post not found' };
-  if (!post.likes) post.likes = [];
-  if (!post.likes.includes(userId)) {
-    post.likes.push(userId);
-    saveData();
-    return { success: true };
-  }
-  return { success: false, message: 'Already liked' };
-}
-
-export function unlikePost(postId: string, userId: string) {
-  const post = posts.find(p => p.id === postId);
-  if (!post || !post.likes) return { success: false, message: 'Post not found' };
-  const idx = post.likes.indexOf(userId);
-  if (idx !== -1) {
-    post.likes.splice(idx, 1);
-    saveData();
-    return { success: true };
-  }
-  return { success: false, message: 'Not liked yet' };
 }

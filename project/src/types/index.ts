@@ -21,6 +21,7 @@ export interface Post {
   authorId: string;
   createdAt: Date;
   updatedAt?: Date;
+  likes?: string[];
 }
 
 export interface PostWithAuthor extends Post {
@@ -40,6 +41,38 @@ export interface Comment {
 
 export interface CommentWithAuthor extends Comment {
   author: AuthUser;
+}
+
+// Activity interfaces for history tracking
+export interface PostActivity {
+  id: string;
+  userId: string;
+  postId: string;
+  type: 'create' | 'update' | 'delete';
+  createdAt: Date;
+  postTitle: string;
+  postContent: string;
+}
+
+export interface CommentActivity {
+  id: string;
+  userId: string;
+  commentId: string;
+  postId: string;
+  type: 'create' | 'update' | 'delete';
+  createdAt: Date;
+  commentContent: string;
+  postTitle: string;
+}
+
+export interface LikeActivity {
+  id: string;
+  userId: string;
+  postId: string;
+  type: 'like' | 'unlike';
+  createdAt: Date;
+  postTitle: string;
+  postAuthor: string;
 }
 
 // Notification interface
@@ -64,7 +97,7 @@ export interface RegisterForm {
 }
 
 // App State interface for managing page navigation
-export type AppPage = 'home' | 'login' | 'register' | 'post-detail' | 'profile' | 'edit-profile' | 'create-post' | 'edit-post';
+export type AppPage = 'home' | 'login' | 'register' | 'post-detail' | 'profile' | 'edit-profile' | 'create-post' | 'edit-post' | 'history';
 
 export interface AppState {
   currentPage: AppPage;

@@ -10,6 +10,7 @@ import Profile from './components/pages/Profile.vue'
 import EditProfile from './components/pages/EditProfile.vue'
 import CreatePost from './components/pages/CreatePost.vue'
 import EditPost from './components/pages/EditPost.vue'
+import History from './components/pages/History.vue'
 import NotificationToast from './components/common/NotificationToast.vue'
 
 // Get reactive app state
@@ -34,6 +35,8 @@ const currentComponent = computed(() => {
       return CreatePost
     case 'edit-post':
       return EditPost
+    case 'history':
+      return History
     default:
       return Home
   }
