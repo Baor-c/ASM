@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { getAppState, getUserPostActivities, getUserCommentActivities, getUserLikeActivities, navigateTo } from '../../store';
+import { getAppState, getUserPostActivities, getUserCommentActivities, getUserLikeActivities, navigateTo, getPostById } from '../../store';
 import { formatDate } from '../../utils';
 
 const appState = getAppState();
@@ -10,7 +10,7 @@ if (!appState.currentUser) {
   navigateTo('login');
 }
 
-const activeTab = ref<'posts' | 'comments' | 'likes'>('posts');
+const activeTab = ref<'all' | 'posts' | 'comments' | 'likes'>('all');
 
 const postActivities = computed(() => {
   if (!appState.currentUser) return [];
@@ -27,7 +27,54 @@ const likeActivities = computed(() => {
   return getUserLikeActivities(appState.currentUser.id);
 });
 
-function getActivityIcon(type: string) {
+// Tất cả hoạt động được sắp xếp theo thời gian
+const allActivities = computed(() => {
+  const activities = [];
+  
+  // Thêm hoạt động bài viết
+  postActivities.value.forEach(activity => {
+    activities.push({
+      ...activity,
+      category: 'post',
+      icon: getActivityIcon(activity.type, 'post'),
+      text: getActivityText(activity.type, 'post'),
+      title: activity.postTitle || 'Bài viết không có tiêu đề',
+      content: activity.postContent
+    });
+  });
+  
+  // Thêm hoạt động bình luận
+  commentActivities.value.forEach(activity => {
+    activities.push({
+      ...activity,
+      category: 'comment',
+      icon: getActivityIcon(activity.type, 'comment'),
+      text: getActivityText(activity.type, 'comment'),
+      title: activity.postTitle,
+      content: activity.commentContent
+    });
+  });
+  
+  // Thêm hoạt động thích
+  likeActivities.value.forEach(activity => {
+    activities.push({
+      ...activity,
+      category: 'like',
+      icon: getActivityIcon(activity.type, 'like'),
+      text: getActivityText(activity.type, 'like'),
+      title: activity.postTitle,
+      content: `Tác giả: ${activity.postAuthor}`
+    });
+  });
+  
+  return activities.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+});
+
+function getActivityIcon(type: string, category: string) {
+  if (category === 'like') {
+    return type === 'like' ? 'bi-heart-fill text-danger' : 'bi-heart text-secondary';
+  }
+  
   switch (type) {
     case 'create':
       return 'bi-plus-circle text-success';
@@ -35,29 +82,47 @@ function getActivityIcon(type: string) {
       return 'bi-pencil-square text-warning';
     case 'delete':
       return 'bi-trash text-danger';
-    case 'like':
-      return 'bi-heart-fill text-danger';
-    case 'unlike':
-      return 'bi-heart text-secondary';
     default:
       return 'bi-circle';
   }
 }
 
-function getActivityText(type: string, context: string) {
+function getActivityText(type: string, category: string) {
+  if (category === 'like') {
+    return type === 'like' ? 'Đã thích bài viết' : 'Đã bỏ thích bài viết';
+  }
+  
   switch (type) {
     case 'create':
-      return context === 'post' ? 'Đã tạo bài viết' : 'Đã bình luận';
+      return category === 'post' ? 'Đã tạo bài viết' : 'Đã bình luận';
     case 'update':
-      return context === 'post' ? 'Đã cập nhật bài viết' : 'Đã cập nhật bình luận';
+      return category === 'post' ? 'Đã cập nhật bài viết' : 'Đã cập nhật bình luận';
     case 'delete':
-      return context === 'post' ? 'Đã xóa bài viết' : 'Đã xóa bình luận';
-    case 'like':
-      return 'Đã thích bài viết';
-    case 'unlike':
-      return 'Đã bỏ thích bài viết';
+      return category === 'post' ? 'Đã xóa bài viết' : 'Đã xóa bình luận';
     default:
       return 'Hoạt động không xác định';
+  }
+}
+
+function handleActivityClick(activity: any) {
+  if (activity.category === 'post' && activity.type !== 'delete') {
+    // Kiểm tra xem bài viết còn tồn tại không
+    const post = getPostById(activity.postId);
+    if (post) {
+      navigateTo('post-detail', { postId: activity.postId });
+    }
+  } else if (activity.category === 'comment' && activity.type !== 'delete') {
+    // Chuyển đến bài viết chứa bình luận
+    const post = getPostById(activity.postId);
+    if (post) {
+      navigateTo('post-detail', { postId: activity.postId });
+    }
+  } else if (activity.category === 'like') {
+    // Chuyển đến bài viết được thích
+    const post = getPostById(activity.postId);
+    if (post) {
+      navigateTo('post-detail', { postId: activity.postId });
+    }
   }
 }
 </script>
@@ -72,6 +137,16 @@ function getActivityText(type: string, context: string) {
       
       <!-- Tab Navigation -->
       <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+          <button 
+            class="nav-link" 
+            :class="{ active: activeTab === 'all' }"
+            @click="activeTab = 'all'"
+          >
+            <i class="bi bi-list-ul me-1"></i>
+            Tất cả ({{ allActivities.length }})
+          </button>
+        </li>
         <li class="nav-item">
           <button 
             class="nav-link" 
@@ -104,6 +179,43 @@ function getActivityText(type: string, context: string) {
         </li>
       </ul>
       
+      <!-- All Activities Tab -->
+      <div v-if="activeTab === 'all'" class="tab-content">
+        <div v-if="allActivities.length > 0" class="activity-list">
+          <div 
+            v-for="activity in allActivities" 
+            :key="`${activity.category}-${activity.id}`"
+            class="activity-item d-flex align-items-start p-3 border-bottom"
+            :class="{ 'clickable': activity.type !== 'delete' }"
+            @click="activity.type !== 'delete' ? handleActivityClick(activity) : null"
+          >
+            <div class="activity-icon me-3 mt-1">
+              <i :class="['bi', activity.icon]"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="mb-0">{{ activity.text }}</h6>
+                <small class="text-muted">{{ formatDate(activity.createdAt) }}</small>
+              </div>
+              <div class="activity-content">
+                <h6 class="text-primary mb-1">{{ activity.title }}</h6>
+                <p class="text-muted mb-0 small">
+                  {{ activity.category === 'post' ? activity.content.substring(0, 100) + '...' : activity.content }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="text-center py-5 text-muted">
+          <i class="bi bi-clock-history fs-1 mb-3"></i>
+          <p>Chưa có hoạt động nào</p>
+          <button class="btn btn-primary" @click="navigateTo('home')">
+            <i class="bi bi-house-door me-1"></i>
+            Về trang chủ
+          </button>
+        </div>
+      </div>
+      
       <!-- Post Activities Tab -->
       <div v-if="activeTab === 'posts'" class="tab-content">
         <div v-if="postActivities.length > 0" class="activity-list">
@@ -111,9 +223,11 @@ function getActivityText(type: string, context: string) {
             v-for="activity in postActivities" 
             :key="activity.id"
             class="activity-item d-flex align-items-start p-3 border-bottom"
+            :class="{ 'clickable': activity.type !== 'delete' }"
+            @click="activity.type !== 'delete' ? navigateTo('post-detail', { postId: activity.postId }) : null"
           >
             <div class="activity-icon me-3 mt-1">
-              <i :class="['bi', getActivityIcon(activity.type)]"></i>
+              <i :class="['bi', getActivityIcon(activity.type, 'post')]"></i>
             </div>
             <div class="flex-grow-1">
               <div class="d-flex justify-content-between align-items-start mb-2">
@@ -121,7 +235,7 @@ function getActivityText(type: string, context: string) {
                 <small class="text-muted">{{ formatDate(activity.createdAt) }}</small>
               </div>
               <div class="activity-content">
-                <h6 class="text-primary mb-1">{{ activity.postTitle || 'Không có tiêu đề' }}</h6>
+                <h6 class="text-primary mb-1">{{ activity.postTitle || 'Bài viết không có tiêu đề' }}</h6>
                 <p class="text-muted mb-0 small">{{ activity.postContent.substring(0, 100) }}...</p>
               </div>
             </div>
@@ -140,9 +254,11 @@ function getActivityText(type: string, context: string) {
             v-for="activity in commentActivities" 
             :key="activity.id"
             class="activity-item d-flex align-items-start p-3 border-bottom"
+            :class="{ 'clickable': activity.type !== 'delete' }"
+            @click="activity.type !== 'delete' ? navigateTo('post-detail', { postId: activity.postId }) : null"
           >
             <div class="activity-icon me-3 mt-1">
-              <i :class="['bi', getActivityIcon(activity.type)]"></i>
+              <i :class="['bi', getActivityIcon(activity.type, 'comment')]"></i>
             </div>
             <div class="flex-grow-1">
               <div class="d-flex justify-content-between align-items-start mb-2">
@@ -173,10 +289,11 @@ function getActivityText(type: string, context: string) {
           <div 
             v-for="activity in likeActivities" 
             :key="activity.id"
-            class="activity-item d-flex align-items-start p-3 border-bottom"
+            class="activity-item d-flex align-items-start p-3 border-bottom clickable"
+            @click="navigateTo('post-detail', { postId: activity.postId })"
           >
             <div class="activity-icon me-3 mt-1">
-              <i :class="['bi', getActivityIcon(activity.type)]"></i>
+              <i :class="['bi', getActivityIcon(activity.type, 'like')]"></i>
             </div>
             <div class="flex-grow-1">
               <div class="d-flex justify-content-between align-items-start mb-2">
@@ -211,6 +328,7 @@ function getActivityText(type: string, context: string) {
   border-bottom: 2px solid transparent;
   background: none;
   padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
 }
 
 .nav-tabs .nav-link:hover {
@@ -227,11 +345,19 @@ function getActivityText(type: string, context: string) {
 }
 
 .activity-item {
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease;
 }
 
 .activity-item:hover {
   background-color: rgba(0, 0, 0, 0.02);
+}
+
+.activity-item.clickable {
+  cursor: pointer;
+}
+
+.activity-item.clickable:hover {
+  background-color: rgba(29, 161, 242, 0.05);
 }
 
 .activity-item:last-child {
