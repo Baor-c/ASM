@@ -168,29 +168,7 @@ function handleUpdatePassword() {
           <div class="form-text">Không thể thay đổi email</div>
         </div>
         
-        <div class="mb-3">
-          <label for="avatarUrl" class="form-label">URL ảnh đại diện</label>
-          <input
-            type="text"
-            id="avatarUrl"
-            v-model="profileForm.avatarUrl"
-            class="form-control"
-            :class="{ 'is-invalid': errors.avatarUrl }"
-            placeholder="https://example.com/your-avatar.jpg"
-          >
-          <div class="invalid-feedback" v-if="errors.avatarUrl">{{ errors.avatarUrl }}</div>
-        </div>
-        
-        <div class="mb-4">
-          <div class="d-flex align-items-center">
-            <span class="me-3">Xem trước:</span>
-            <img
-              :src="profileForm.avatarUrl || appState.currentUser.avatarUrl"
-              alt="Avatar Preview"
-              class="avatar"
-            >
-          </div>
-        </div>
+    
         
         <div class="d-flex justify-content-between">
           <button
