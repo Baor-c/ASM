@@ -22,6 +22,34 @@ const errors = ref({
 const isSubmitting = ref(false);
 const imagePreview = ref('');
 
+// Phân tích nội dung để tách tiêu đề và nội dung
+function parseContent(content: string) {
+  const lines = content.trim().split('\n');
+  
+  // Kiểm tra dòng đầu tiên có bắt đầu bằng "# " không (cú pháp Markdown)
+  if (lines[0] && lines[0].startsWith('# ')) {
+    const title = lines[0].substring(2).trim(); // Bỏ "# " ở đầu
+    const remainingContent = lines.slice(1).join('\n').trim();
+    return { title, content: remainingContent };
+  }
+  
+  // Kiểm tra dòng đầu tiên có bắt đầu bằng "Tiêu đề:" không
+  if (lines[0] && lines[0].toLowerCase().startsWith('tiêu đề:')) {
+    const title = lines[0].substring(8).trim(); // Bỏ "Tiêu đề:" ở đầu
+    const remainingContent = lines.slice(1).join('\n').trim();
+    return { title, content: remainingContent };
+  }
+  
+  // Kiểm tra dòng đầu tiên có được bao quanh bởi ** ** không (bold)
+  if (lines[0] && lines[0].startsWith('**') && lines[0].endsWith('**') && lines[0].length > 4) {
+    const title = lines[0].substring(2, lines[0].length - 2).trim();
+    const remainingContent = lines.slice(1).join('\n').trim();
+    return { title, content: remainingContent };
+  }
+  
+  return { title: '', content: content };
+}
+
 function handleFileChange(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (file) {
@@ -61,9 +89,12 @@ function handleSubmit() {
 
   isSubmitting.value = true;
 
+  // Phân tích nội dung để tách tiêu đề
+  const { title, content } = parseContent(form.value.content);
+
   const result = createPost(
-    '', // không có tiêu đề
-    form.value.content,
+    title, // tiêu đề được phân tích từ nội dung
+    content, // nội dung sau khi đã bỏ tiêu đề
     form.value.image || undefined,
     appState.currentUser.id
   );
@@ -85,6 +116,12 @@ function handleSubmit() {
 
   isSubmitting.value = false;
 }
+
+// Computed để hiển thị preview tiêu đề
+const contentPreview = computed(() => {
+  if (!form.value.content.trim()) return { title: '', content: '' };
+  return parseContent(form.value.content);
+});
 </script>
 
 <template>
@@ -102,11 +139,26 @@ function handleSubmit() {
           <textarea
             v-model="form.content"
             class="form-control border-0 shadow-none mb-3"
-            rows="3"
-            placeholder="Bạn đang nghĩ gì?"
+            rows="4"
+            placeholder="Bạn đang nghĩ gì?
+
+💡 Mẹo: Để thêm tiêu đề cho bài viết, bạn có thể:
+• Bắt đầu bằng: # Tiêu đề của bạn
+• Hoặc: Tiêu đề: Tiêu đề của bạn  
+• Hoặc: **Tiêu đề của bạn**"
             style="resize:none;font-size:1.1rem"
           ></textarea>
           <div class="invalid-feedback d-block" v-if="errors.content">{{ errors.content }}</div>
+
+          <!-- Preview tiêu đề nếu có -->
+          <div v-if="contentPreview.title" class="alert alert-info mb-3">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-info-circle me-2"></i>
+              <div>
+                <strong>Tiêu đề được phát hiện:</strong> {{ contentPreview.title }}
+              </div>
+            </div>
+          </div>
 
           <!-- Image Preview -->
           <div v-if="imagePreview" class="mb-3">
@@ -129,12 +181,24 @@ function handleSubmit() {
 
           <!-- Action Bar -->
           <div class="d-flex align-items-center justify-content-between pt-2 border-top">
-            <div>
+            <div class="d-flex align-items-center">
               <label class="btn btn-light btn-sm mb-0 me-2" style="cursor:pointer">
                 <i class="bi bi-image text-primary me-1"></i>
                 Ảnh
                 <input type="file" accept="image/*" @change="handleFileChange" style="display:none">
               </label>
+              
+              <!-- Nút trợ giúp cú pháp -->
+              <button 
+                type="button" 
+                class="btn btn-light btn-sm mb-0"
+                data-bs-toggle="collapse" 
+                data-bs-target="#syntaxHelp"
+                aria-expanded="false"
+              >
+                <i class="bi bi-question-circle text-info me-1"></i>
+                Cú pháp
+              </button>
             </div>
             <button
               type="submit"
@@ -149,6 +213,31 @@ function handleSubmit() {
                 Đăng bài
               </span>
             </button>
+          </div>
+
+          <!-- Hướng dẫn cú pháp -->
+          <div class="collapse mt-3" id="syntaxHelp">
+            <div class="card card-body bg-light">
+              <h6 class="mb-2"><i class="bi bi-lightbulb text-warning me-1"></i> Cách thêm tiêu đề cho bài viết:</h6>
+              <div class="small">
+                <div class="mb-2">
+                  <code># Tiêu đề của bạn</code><br>
+                  <span class="text-muted">Sử dụng dấu # ở đầu dòng đầu tiên</span>
+                </div>
+                <div class="mb-2">
+                  <code>Tiêu đề: Tiêu đề của bạn</code><br>
+                  <span class="text-muted">Viết "Tiêu đề:" ở đầu dòng đầu tiên</span>
+                </div>
+                <div class="mb-2">
+                  <code>**Tiêu đề của bạn**</code><br>
+                  <span class="text-muted">Bao quanh tiêu đề bằng ** **</span>
+                </div>
+                <div class="text-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Nếu không sử dụng cú pháp trên, bài viết sẽ không có tiêu đề riêng.
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       </div>
@@ -216,6 +305,14 @@ function handleSubmit() {
 
 .form-control::placeholder {
   color: #657786;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+code {
+  background-color: #f8f9fa;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.875rem;
 }
 </style>
